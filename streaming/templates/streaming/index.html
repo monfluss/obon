@@ -1,0 +1,530 @@
+{% extends 'streaming/base.html' %}
+
+{% block title %} — Главная{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ══════════════════════════════════════════════
+     INDEX PAGE — inherits all vars from base.html
+  ══════════════════════════════════════════════ */
+
+  /* ── Page wrapper ─────────────────────────── */
+  .index-page {
+    padding: 32px 32px 48px;
+    min-height: 100%;
+  }
+
+  /* ── Top bar ──────────────────────────────── */
+  .index-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+
+  .index-topbar h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--text-primary);
+    flex-shrink: 0;
+  }
+
+  .index-topbar h1 .query-text {
+    color: var(--accent);
+  }
+
+  /* ── Search form ──────────────────────────── */
+  .search-form {
+    display: flex;
+    align-items: center;
+    background: #242424;
+    border-radius: 30px;
+    padding: 0 6px 0 18px;
+    gap: 8px;
+    border: 1.5px solid transparent;
+    transition:
+      border-color var(--transition),
+      box-shadow var(--transition);
+  }
+
+  .search-form:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.13);
+  }
+
+  .search-form .search-icon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-form input[type="text"] {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    width: 200px;
+    padding: 12px 0;
+  }
+
+  .search-form input[type="text"]::placeholder {
+    color: var(--text-muted);
+  }
+
+  .search-form button[type="submit"] {
+    background: var(--accent);
+    border: none;
+    border-radius: 24px;
+    color: #000;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      background var(--transition),
+      transform 0.1s;
+  }
+
+  .search-form button[type="submit"]:hover {
+    background: var(--accent-hover);
+  }
+
+  .search-form button[type="submit"]:active {
+    transform: scale(0.95);
+  }
+
+  /* ── Section header ───────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .section-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  .section-badge {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(29, 185, 84, 0.12);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── Tracks grid ──────────────────────────── */
+  .tracks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 24px;
+  }
+
+  /* ── Track card ───────────────────────────── */
+  .track-card {
+    background: #181818;
+    border-radius: 10px;
+    padding: 14px 14px 16px;
+    cursor: pointer;
+    transition:
+      background var(--transition),
+      transform var(--transition);
+    position: relative;
+
+    /* staggered entrance animation */
+    opacity: 0;
+    animation: cardReveal 0.38s ease forwards;
+  }
+
+  .track-card:hover {
+    background: #282828;
+    transform: translateY(-3px);
+  }
+
+  .track-card:active {
+    transform: translateY(-1px);
+  }
+
+  /* stagger delays */
+  .track-card:nth-child(1)  { animation-delay: 0.03s; }
+  .track-card:nth-child(2)  { animation-delay: 0.07s; }
+  .track-card:nth-child(3)  { animation-delay: 0.11s; }
+  .track-card:nth-child(4)  { animation-delay: 0.15s; }
+  .track-card:nth-child(5)  { animation-delay: 0.19s; }
+  .track-card:nth-child(6)  { animation-delay: 0.23s; }
+  .track-card:nth-child(7)  { animation-delay: 0.27s; }
+  .track-card:nth-child(8)  { animation-delay: 0.31s; }
+  .track-card:nth-child(9)  { animation-delay: 0.35s; }
+  .track-card:nth-child(10) { animation-delay: 0.38s; }
+  .track-card:nth-child(11) { animation-delay: 0.40s; }
+  .track-card:nth-child(12) { animation-delay: 0.42s; }
+  .track-card:nth-child(n+13) { animation-delay: 0.44s; }
+
+  @keyframes cardReveal {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ── Cover wrapper ────────────────────────── */
+  .cover-wrap {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #2a2a2a;
+    margin-bottom: 14px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    flex-shrink: 0;
+  }
+
+  .cover-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* placeholder when no cover */
+  .cover-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+    background: linear-gradient(135deg, #252525 0%, #161616 100%);
+    user-select: none;
+  }
+
+  /* ── Play button (appears on hover) ──────── */
+  .play-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+
+    /* hidden by default */
+    opacity: 0;
+    transform: translateY(8px) scale(0.88);
+    transition:
+      opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+  }
+
+  /* show on card hover */
+  .track-card:hover .play-btn {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .play-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(0) scale(1.08) !important;
+  }
+
+  .play-btn svg {
+    transform: translateX(2px); /* optical centering of ▶ */
+  }
+
+  /* ── Currently playing indicator ─────────── */
+  .track-card.is-playing .cover-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(29, 185, 84, 0.1);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  .track-card.is-playing .play-btn {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    box-shadow:
+      0 0 0 3px rgba(29, 185, 84, 0.4),
+      0 8px 24px rgba(0,0,0,0.55);
+  }
+
+  .track-card.is-playing .track-title {
+    color: var(--accent);
+  }
+
+  /* ── Track meta text ──────────────────────── */
+  .track-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .track-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+    transition: color var(--transition);
+  }
+
+  .track-artist {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Empty state ──────────────────────────── */
+  .empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    gap: 14px;
+    text-align: center;
+    animation: cardReveal 0.4s ease both;
+  }
+
+  .empty-icon {
+    font-size: 3.5rem;
+    line-height: 1;
+    opacity: 0.4;
+  }
+
+  .empty-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .empty-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    max-width: 240px;
+    line-height: 1.5;
+  }
+
+  .empty-reset {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 9px 22px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background var(--transition);
+  }
+
+  .empty-reset:hover {
+    background: rgba(255,255,255,0.13);
+  }
+</style>
+
+
+<div class="index-page">
+
+  <!-- ══════════════════════════════════════════
+       TOP BAR: dynamic greeting + search form
+  ══════════════════════════════════════════ -->
+  <div class="index-topbar">
+
+    <h1>
+      {% if request.GET.query %}
+        Поиск: <span class="query-text">{{ request.GET.query }}</span>
+      {% else %}
+        Добрый день
+      {% endif %}
+    </h1>
+
+    <form class="search-form" method="GET" action="">
+      <span class="search-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.4" cy="6.4" r="4.9"
+                  stroke="currentColor" stroke-width="1.6"/>
+          <line x1="10.4" y1="10.4" x2="14" y2="14"
+                stroke="currentColor" stroke-width="1.6"
+                stroke-linecap="round"/>
+        </svg>
+      </span>
+
+      <input
+        type="text"
+        name="query"
+        placeholder="Исполнители, треки…"
+        value="{{ request.GET.query|default:'' }}"
+        autocomplete="off"
+        spellcheck="false"
+      >
+
+      <button type="submit">Найти</button>
+    </form>
+
+  </div><!-- /index-topbar -->
+
+
+  <!-- ══════════════════════════════════════════
+       SECTION HEADING
+  ══════════════════════════════════════════ -->
+  <div class="section-header">
+    {% if request.GET.query %}
+      <h2>Результаты</h2>
+      <span class="section-badge">
+        {{ tracks|length }}&nbsp;трек{{ tracks|length|pluralize:",,ов" }}
+      </span>
+    {% else %}
+      <h2>Рекомендации</h2>
+      <span class="section-badge">Для вас</span>
+    {% endif %}
+  </div>
+
+
+  <!-- ══════════════════════════════════════════
+       TRACKS GRID
+  ══════════════════════════════════════════ -->
+  <div class="tracks-grid" id="tracks-grid">
+
+    {% for track in tracks %}
+
+    <div
+      class="track-card"
+      id="track-card-{{ forloop.counter0 }}"
+      onclick="playFromQueue({{ forloop.counter0 }})"
+      title="{{ track.title }} — {{ track.artist }}"
+    >
+
+      <!-- Cover -->
+      <div class="cover-wrap">
+        {% if track.cover %}
+          <img
+            src="{{ track.cover.url }}"
+            alt="{{ track.title|escapejs }}"
+            loading="lazy"
+          >
+        {% else %}
+          <div class="cover-placeholder">🎵</div>
+        {% endif %}
+
+        <!-- Play button — CSS opacity revealed on card:hover -->
+        <div class="play-btn" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+            <path d="M5 3.5l11 5.5-11 5.5V3.5z"/>
+          </svg>
+        </div>
+      </div><!-- /cover-wrap -->
+
+      <!-- Meta -->
+      <div class="track-info">
+        <div class="track-title">{{ track.title }}</div>
+        <div class="track-artist">{{ track.artist }}</div>
+      </div>
+
+    </div><!-- /track-card -->
+
+    {% empty %}
+
+    <div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">Ничего не найдено</div>
+      <p class="empty-sub">
+        Попробуйте другой запрос или вернитесь к рекомендациям.
+      </p>
+      <a href="{% url 'index' %}" class="empty-reset">← Все треки</a>
+    </div>
+
+    {% endfor %}
+
+  </div><!-- /tracks-grid -->
+
+</div><!-- /index-page -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     GLOBAL PLAYLIST QUEUE
+     Consumed by window.playFromQueue() defined in base.html.
+     Must be populated BEFORE the DOMContentLoaded patch below.
+══════════════════════════════════════════════════════ -->
+<script>
+  window.currentPlaylistQueue = [
+    {% for track in tracks %}
+    {
+      url:    "{{ track.audio_file.url }}",
+      id:     {{ track.pk }},
+      title:  "{{ track.title|escapejs }}",
+      artist: "{{ track.artist|escapejs }}",
+      cover:  {% if track.cover %}"{{ track.cover.url }}"{% else %}'none'{% endif %}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+</script>
+
+
+<!-- ══════════════════════════════════════════════════════
+     ACTIVE CARD HIGHLIGHT
+     Patches window.playFromQueue (defined in base.html)
+     to also mark the matching card with .is-playing.
+     Wrapped in DOMContentLoaded so base.html's script
+     has already run and set the original function.
+══════════════════════════════════════════════════════ -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    var _originalPlay = window.playFromQueue;
+
+    window.playFromQueue = function (index) {
+      /* 1. Delegate audio logic to the base.html player */
+      _originalPlay(index);
+
+      /* 2. Sync card highlight state */
+      var cards = document.querySelectorAll('#tracks-grid .track-card');
+      cards.forEach(function (card, i) {
+        card.classList.toggle('is-playing', i === index);
+      });
+    };
+
+  });
+</script>
+
+{% endblock %}

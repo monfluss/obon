@@ -1,0 +1,874 @@
+{% extends 'streaming/base.html' %}
+
+{% block title %} — Плейлисты{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ══════════════════════════════════════════════
+     PLAYLISTS PAGE — inherits all vars from base.html
+  ══════════════════════════════════════════════ */
+
+  .playlists-page {
+    padding: 32px 32px 48px;
+    min-height: 100%;
+  }
+
+  /* ── Top bar ──────────────────────────────── */
+  .playlists-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+
+  .playlists-topbar h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--text-primary);
+  }
+
+  /* ── Create button ────────────────────────── */
+  .btn-create {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 30px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    text-decoration: none;
+    transition: background var(--transition), transform 0.1s;
+  }
+
+  .btn-create:hover  { background: var(--accent-hover); }
+  .btn-create:active { transform: scale(0.96); }
+
+  /* ── Section header ───────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .section-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  .section-badge {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(29, 185, 84, 0.12);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* ══════════════════════════════════════════════
+     PLAYLISTS GRID
+  ══════════════════════════════════════════════ */
+  .playlists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 48px;
+  }
+
+  /* ── Playlist card ────────────────────────── */
+  .playlist-card {
+    background: #181818;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+    position: relative;
+    opacity: 0;
+    animation: cardReveal 0.38s ease forwards;
+  }
+
+  .playlist-card:nth-child(1)  { animation-delay: 0.04s; }
+  .playlist-card:nth-child(2)  { animation-delay: 0.09s; }
+  .playlist-card:nth-child(3)  { animation-delay: 0.14s; }
+  .playlist-card:nth-child(4)  { animation-delay: 0.19s; }
+  .playlist-card:nth-child(5)  { animation-delay: 0.23s; }
+  .playlist-card:nth-child(6)  { animation-delay: 0.27s; }
+  .playlist-card:nth-child(n+7){ animation-delay: 0.30s; }
+
+  .playlist-card:hover  { background: #282828; transform: translateY(-3px); }
+  .playlist-card:active { transform: translateY(-1px); }
+
+  /* active playlist highlight */
+  .playlist-card.is-active {
+    background: #1e2e20;
+    outline: 1.5px solid rgba(29,185,84,0.35);
+  }
+
+  /* ── Mosaic cover (2×2 grid or single) ───── */
+  .playlist-mosaic {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #2a2a2a;
+    margin-bottom: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+  }
+
+  /* 4-cell mosaic */
+  .mosaic-grid {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+  }
+
+  .mosaic-cell {
+    overflow: hidden;
+    background: #333;
+  }
+
+  .mosaic-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .mosaic-cell .cell-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background: linear-gradient(135deg,#2a2a2a,#1a1a1a);
+  }
+
+  /* Single cover (< 4 tracks) */
+  .mosaic-single {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg,#252525,#161616);
+    font-size: 3.2rem;
+  }
+
+  .mosaic-single img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Play overlay on mosaic */
+  .mosaic-play {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    opacity: 0;
+    transform: translateY(8px) scale(0.88);
+    transition:
+      opacity 0.22s cubic-bezier(0.4,0,0.2,1),
+      transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+  }
+
+  .playlist-card:hover .mosaic-play {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .mosaic-play:hover { background: var(--accent-hover); transform: scale(1.08) !important; }
+  .mosaic-play svg   { transform: translateX(2px); }
+
+  /* is-active play button always visible */
+  .playlist-card.is-active .mosaic-play {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.4), 0 6px 20px rgba(0,0,0,0.6);
+  }
+
+  /* ── Playlist meta ────────────────────────── */
+  .playlist-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+    transition: color var(--transition);
+  }
+
+  .playlist-card.is-active .playlist-name { color: var(--accent); }
+
+  .playlist-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .playlist-count {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ── Playlist context menu dot ────────────── */
+  .playlist-menu-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity var(--transition), background var(--transition), color var(--transition);
+  }
+
+  .playlist-card:hover .playlist-menu-btn { opacity: 1; }
+  .playlist-menu-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+
+  /* ══════════════════════════════════════════════
+     OPEN PLAYLIST — track list panel
+     (shown below grid when a playlist is selected)
+  ══════════════════════════════════════════════ */
+  .playlist-detail {
+    display: none;  /* shown via JS */
+    background: #141414;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    border: 1px solid rgba(255,255,255,0.06);
+    animation: cardReveal 0.3s ease both;
+  }
+
+  .playlist-detail.visible { display: block; }
+
+  /* Detail header */
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 22px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .detail-cover {
+    width: 72px; height: 72px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #2a2a2a;
+    flex-shrink: 0;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  }
+
+  .detail-cover img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+
+  .detail-cover .cover-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+    background: linear-gradient(135deg,#252525,#161616);
+  }
+
+  .detail-info { flex: 1; min-width: 0; }
+
+  .detail-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .detail-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .btn-play-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 30px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: background var(--transition), transform 0.1s;
+  }
+
+  .btn-play-all:hover  { background: var(--accent-hover); }
+  .btn-play-all:active { transform: scale(0.96); }
+
+  .btn-close-detail {
+    background: rgba(255,255,255,0.06);
+    border: none;
+    color: var(--text-secondary);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  .btn-close-detail:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+
+  /* Track rows inside detail */
+  .detail-tracks { padding: 8px 0; }
+
+  .detail-track-row {
+    display: grid;
+    grid-template-columns: 28px 40px 1fr;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 24px;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+
+  .detail-track-row:hover  { background: rgba(255,255,255,0.04); }
+  .detail-track-row:active { background: rgba(255,255,255,0.07); }
+
+  .detail-track-row.is-playing { background: rgba(29,185,84,0.07); }
+  .detail-track-row.is-playing .detail-row-num   { color: var(--accent); }
+  .detail-track-row.is-playing .detail-row-title { color: var(--accent); }
+
+  .detail-row-num {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: right;
+    flex-shrink: 0;
+    transition: color var(--transition);
+  }
+
+  .detail-row-thumb {
+    width: 40px; height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #2a2a2a;
+    flex-shrink: 0;
+  }
+
+  .detail-row-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+
+  .detail-row-thumb .cover-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    background: linear-gradient(135deg,#2a2a2a,#1a1a1a);
+  }
+
+  .detail-row-meta { min-width: 0; }
+
+  .detail-row-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--transition);
+  }
+
+  .detail-row-artist {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  /* Empty detail */
+  .detail-empty {
+    padding: 36px 24px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* ── Animation ────────────────────────────── */
+  @keyframes cardReveal {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ══════════════════════════════════════════════
+     EMPTY STATE (no playlists at all)
+  ══════════════════════════════════════════════ */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 20px;
+    gap: 16px;
+    text-align: center;
+    animation: cardReveal 0.4s ease both;
+  }
+
+  .empty-icon { font-size: 3.5rem; opacity: 0.4; line-height: 1; }
+
+  .empty-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .empty-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    max-width: 260px;
+    line-height: 1.5;
+  }
+
+  .empty-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 10px 22px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background var(--transition), transform 0.1s;
+  }
+
+  .empty-cta:hover  { background: var(--accent-hover); }
+  .empty-cta:active { transform: scale(0.97); }
+</style>
+
+
+<div class="playlists-page">
+
+  <!-- ══════════════════════════════════════════
+       TOP BAR
+  ══════════════════════════════════════════ -->
+  <div class="playlists-topbar">
+    <h1>Плейлисты</h1>
+
+    {# Кнопка создания — форма POST для безопасности #}
+    <form method="post" action="{% url 'playlist_create' %}" style="margin:0;">
+      {% csrf_token %}
+      <button type="submit" class="btn-create">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Новый плейлист
+      </button>
+    </form>
+  </div>
+
+
+  {% if playlists %}
+
+    <!-- ════════════════════════════════════════
+         ОТКРЫТАЯ ПАНЕЛЬ ПЛЕЙЛИСТА
+         (изначально скрыта, раскрывается по клику)
+    ════════════════════════════════════════ -->
+    <div class="playlist-detail" id="playlist-detail">
+      <div class="detail-header">
+        <div class="detail-cover" id="detail-cover">
+          <div class="cover-placeholder">🎵</div>
+        </div>
+        <div class="detail-info">
+          <div class="detail-title" id="detail-title">—</div>
+          <div class="detail-sub"   id="detail-sub">0 треков</div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn-play-all" id="btn-play-all" onclick="playAllFromDetail()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M3 2l10 5-10 5V2z"/>
+            </svg>
+            Слушать
+          </button>
+          <button class="btn-close-detail" onclick="closeDetail()" title="Закрыть">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="2" y1="2" x2="12" y2="12"/>
+              <line x1="12" y1="2" x2="2" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-tracks" id="detail-tracks">
+        {# Заполняется через JavaScript #}
+      </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════
+         PLAYLISTS GRID
+    ════════════════════════════════════════ -->
+    <div class="section-header">
+      <h2>Мои плейлисты</h2>
+      <span class="section-badge">
+        {{ playlists|length }}&nbsp;плейлист{{ playlists|length|pluralize:",,ов" }}
+      </span>
+    </div>
+
+    <div class="playlists-grid" id="playlists-grid">
+
+      {% for playlist in playlists %}
+      <div
+        class="playlist-card"
+        id="playlist-card-{{ playlist.pk }}"
+        onclick="openPlaylist({{ playlist.pk }})"
+        title="{{ playlist.name }}"
+      >
+
+        <!-- Mosaic cover: первые 4 обложки треков -->
+        <div class="playlist-mosaic">
+
+          {% with ptracks=playlist.tracks.all %}
+
+          {% if ptracks|length >= 4 %}
+            <div class="mosaic-grid">
+              {% for t in ptracks|slice:":4" %}
+              <div class="mosaic-cell">
+                {% if t.cover %}
+                  <img src="{{ t.cover.url }}" alt="" loading="lazy">
+                {% else %}
+                  <div class="cell-placeholder">🎵</div>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+
+          {% elif ptracks|length >= 1 %}
+            <div class="mosaic-single">
+              {% if ptracks.0.cover %}
+                <img src="{{ ptracks.0.cover.url }}" alt="" loading="lazy">
+              {% else %}
+                🎵
+              {% endif %}
+            </div>
+
+          {% else %}
+            <div class="mosaic-single">🎵</div>
+          {% endif %}
+
+          {% endwith %}
+
+          <div class="mosaic-play" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+              <path d="M5 3.5l11 5.5-11 5.5V3.5z"/>
+            </svg>
+          </div>
+        </div><!-- /playlist-mosaic -->
+
+        <div class="playlist-name">{{ playlist.name }}</div>
+        <div class="playlist-meta-row">
+          <span class="playlist-count">
+            {{ playlist.tracks.count }}&nbsp;трек{{ playlist.tracks.count|pluralize:",,ов" }}
+          </span>
+
+          {# Кнопка «…» — остановить всплытие, чтобы не открыть плейлист #}
+          <button
+            class="playlist-menu-btn"
+            onclick="event.stopPropagation(); openMenu({{ playlist.pk }})"
+            title="Действия"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <circle cx="2"  cy="7" r="1.3"/>
+              <circle cx="7"  cy="7" r="1.3"/>
+              <circle cx="12" cy="7" r="1.3"/>
+            </svg>
+          </button>
+        </div>
+
+      </div><!-- /playlist-card -->
+      {% endfor %}
+
+    </div><!-- /playlists-grid -->
+
+
+  {% else %}
+
+    <!-- ── Нет плейлистов ── -->
+    <div class="empty-state">
+      <div class="empty-icon">🎼</div>
+      <div class="empty-title">Плейлистов пока нет</div>
+      <p class="empty-sub">
+        Создайте первый плейлист и добавьте в него любимые треки.
+      </p>
+      <form method="post" action="{% url 'playlist_create' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="empty-cta">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Создать плейлист
+        </button>
+      </form>
+    </div>
+
+  {% endif %}
+
+</div><!-- /playlists-page -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     PLAYLIST DATA
+     Встраиваем все плейлисты с треками в JS-объект.
+     window.playlistsData[id] = { name, tracks: [...] }
+══════════════════════════════════════════════════════ -->
+<script>
+  window.playlistsData = {
+    {% for playlist in playlists %}
+    {{ playlist.pk }}: {
+      name: "{{ playlist.name|escapejs }}",
+      tracks: [
+        {% for track in playlist.tracks.all %}
+        {
+          url:    "{{ track.audio_file.url }}",
+          title:  "{{ track.title|escapejs }}",
+          artist: "{{ track.artist|escapejs }}",
+          cover:  {% if track.cover %}"{{ track.cover.url }}"{% else %}'none'{% endif %}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  /* Текущий открытый плейлист и индекс трека внутри него */
+  var activePlaylistId   = null;
+  var activeDetailIndex  = null;
+
+
+  /* ── openPlaylist(id) ─────────────────────────────────
+     Открывает панель деталей, загружает треки плейлиста
+     в window.currentPlaylistQueue для глобального плеера.
+  ──────────────────────────────────────────────────────── */
+  function openPlaylist(id) {
+    var data = window.playlistsData[id];
+    if (!data) return;
+
+    /* Если кликнули на уже открытый — закрыть */
+    if (activePlaylistId === id) {
+      closeDetail();
+      return;
+    }
+
+    activePlaylistId  = id;
+    activeDetailIndex = null;
+
+    /* Обновляем очередь глобального плеера */
+    window.currentPlaylistQueue = data.tracks;
+
+    /* Заполняем шапку панели */
+    document.getElementById('detail-title').textContent = data.name;
+    document.getElementById('detail-sub').textContent =
+      data.tracks.length + ' ' + pluralizeRu(data.tracks.length, 'трек', 'трека', 'треков');
+
+    /* Первая обложка в шапке */
+    var coverEl = document.getElementById('detail-cover');
+    if (data.tracks.length > 0 && data.tracks[0].cover !== 'none') {
+      coverEl.innerHTML = '<img src="' + data.tracks[0].cover + '" alt="">';
+    } else {
+      coverEl.innerHTML = '<div class="cover-placeholder">🎵</div>';
+    }
+
+    /* Строим список треков */
+    var container = document.getElementById('detail-tracks');
+    if (data.tracks.length === 0) {
+      container.innerHTML = '<div class="detail-empty">Плейлист пуст. Добавьте треки из главной страницы.</div>';
+    } else {
+      var html = '';
+      data.tracks.forEach(function (track, i) {
+        var thumb = track.cover !== 'none'
+          ? '<img src="' + track.cover + '" alt="" loading="lazy">'
+          : '<div class="cover-placeholder">🎵</div>';
+
+        html +=
+          '<div class="detail-track-row" id="detail-row-' + i + '" ' +
+               'onclick="playFromDetail(' + i + ')">' +
+            '<span class="detail-row-num">' + (i + 1) + '</span>' +
+            '<div class="detail-row-thumb">' + thumb + '</div>' +
+            '<div class="detail-row-meta">' +
+              '<div class="detail-row-title">' + escHtml(track.title)  + '</div>' +
+              '<div class="detail-row-artist">' + escHtml(track.artist) + '</div>' +
+            '</div>' +
+          '</div>';
+      });
+      container.innerHTML = html;
+    }
+
+    /* Показываем панель */
+    document.getElementById('playlist-detail').classList.add('visible');
+
+    /* Прокручиваем к панели */
+    document.getElementById('playlist-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    /* Подсвечиваем активную карточку */
+    document.querySelectorAll('.playlist-card').forEach(function (el) {
+      el.classList.remove('is-active');
+    });
+    var activeCard = document.getElementById('playlist-card-' + id);
+    if (activeCard) activeCard.classList.add('is-active');
+  }
+
+
+  /* ── closeDetail() ────────────────────────── */
+  function closeDetail() {
+    document.getElementById('playlist-detail').classList.remove('visible');
+    document.querySelectorAll('.playlist-card').forEach(function (el) {
+      el.classList.remove('is-active');
+    });
+    activePlaylistId  = null;
+    activeDetailIndex = null;
+  }
+
+
+  /* ── playFromDetail(index) ────────────────── */
+  function playFromDetail(index) {
+    activeDetailIndex = index;
+
+    /* Передаём в глобальный плеер из base.html */
+    window.playFromQueue(index);
+
+    /* Подсвечиваем строку */
+    document.querySelectorAll('.detail-track-row').forEach(function (el) {
+      el.classList.remove('is-playing');
+    });
+    var row = document.getElementById('detail-row-' + index);
+    if (row) row.classList.add('is-playing');
+  }
+
+
+  /* ── playAllFromDetail() ─────────────────── */
+  function playAllFromDetail() {
+    if (activePlaylistId !== null) {
+      playFromDetail(0);
+    }
+  }
+
+
+  /* ── openMenu(id) ────────────────────────── */
+  function openMenu(id) {
+    /* TODO: реализуйте контекстное меню (удалить / переименовать) */
+    console.log('Меню плейлиста', id);
+  }
+
+
+  /* ── Helpers ─────────────────────────────── */
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function pluralizeRu(n, one, few, many) {
+    var mod10  = n % 10;
+    var mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11)                          return n + ' ' + one;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return n + ' ' + few;
+    return n + ' ' + many;
+  }
+</script>
+
+
+<!-- ══════════════════════════════════════════════════════
+     ACTIVE HIGHLIGHT — патч window.playFromQueue из base.html.
+     Синхронизирует .is-playing внутри detail-panel
+     при авто-переходе (audio.onended в base.html).
+══════════════════════════════════════════════════════ -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    var _originalPlay = window.playFromQueue;
+
+    window.playFromQueue = function (index) {
+      /* 1. Аудио-логика base.html */
+      _originalPlay(index);
+
+      /* 2. Если detail-панель открыта — синхронизируем подсветку строки */
+      if (activePlaylistId !== null) {
+        activeDetailIndex = index;
+        document.querySelectorAll('.detail-track-row').forEach(function (el) {
+          el.classList.remove('is-playing');
+        });
+        var row = document.getElementById('detail-row-' + index);
+        if (row) {
+          row.classList.add('is-playing');
+          row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    };
+
+  });
+</script>
+
+{% endblock %}

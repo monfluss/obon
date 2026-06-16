@@ -1,0 +1,23 @@
+{% extends 'streaming/base.html' %}
+
+{% block content %}
+<h2 style="margin-bottom: 25px;">Мои плейлисты</h2>
+
+<div class="playlists-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+    <div style="background: #282828; padding: 20px; border-radius: 10px; text-align: center; border: 2px dashed #444; cursor: pointer;">
+        <span style="font-size: 3rem; color: var(--accent);">+</span>
+        <p>Создать плейлист</p>
+    </div>
+
+    {% for playlist in playlists %}
+        <div style="background: var(--card-bg); padding: 20px; border-radius: 10px; transition: 0.3s;">
+            <div style="width: 100%; aspect-ratio: 1; background: #333; border-radius: 5px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                🎼
+            </div>
+            <div style="font-weight: bold;">{{ playlist.name }}</div>
+            <div style="color: var(--text-dim); font-size: 0.8rem;">{{ playlist.tracks.count }} треков</div>
+        </div>
+    {% empty %}
+        {% endfor %}
+</div>
+{% endblock %}

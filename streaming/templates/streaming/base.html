@@ -1,0 +1,1522 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OBON{% block title %}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── CSS Variables ──────────────────────────────────── */
+    :root {
+      --accent:           #1b4d8d;
+      --accent-hover:     #143a6b;
+      --accent-dim:       rgba(29, 185, 84, 0.15);
+      --bg-sidebar:       #000000;
+      --bg-player:        #0a0a0a;
+      --bg-main-from:     #2a2a2a;
+      --bg-main-to:       #121212;
+      --border:           rgba(255,255,255,0.07);
+      --text-primary:     #ffffff;
+      --text-secondary:   #a8a8a8;
+      --text-muted:       #555555;
+      --radius-sm:        6px;
+      --radius-md:        10px;
+      --radius-lg:        16px;
+      --sidebar-w:        240px;
+      --player-w:         320px;
+      --transition:       0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #000;
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════════════════════════════ */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--bg-sidebar);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 16px 24px;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    /* Logo */
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 8px;
+      margin-bottom: 36px;
+      flex-shrink: 0;
+    }
+
+    .logo-mark {
+      width: 34px;
+      height: 34px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-mark svg {
+      display: block;
+    }
+
+    .logo-wordmark {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: var(--text-primary);
+    }
+
+    /* Nav */
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 12px;
+      margin: 18px 0 6px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: background var(--transition), color var(--transition);
+      position: relative;
+    }
+
+    .nav-link:hover {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-primary);
+    }
+
+    .nav-link.active {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-primary);
+    }
+
+    .nav-link.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .nav-link .nav-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.75;
+      flex-shrink: 0;
+    }
+
+    .nav-link:hover .nav-icon,
+    .nav-link.active .nav-icon {
+      opacity: 1;
+    }
+
+    /* User block */
+    .sidebar-user {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 8px;
+      border-radius: var(--radius-md);
+      margin-bottom: 6px;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--accent) 0%, #0f7a35 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #000;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+
+    .user-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Logout button styled as link */
+    .logout-form {
+      width: 100%;
+    }
+
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 9px 12px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: background var(--transition), color var(--transition);
+      text-align: left;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: #e55;
+    }
+
+    /* Auth buttons */
+    .auth-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-auth {
+      display: block;
+      text-align: center;
+      padding: 10px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: transform 0.12s, opacity 0.15s;
+    }
+
+    .btn-auth:active {
+      transform: scale(0.97);
+    }
+
+    .btn-login {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      color: var(--text-primary);
+    }
+
+    .btn-login:hover {
+      border-color: rgba(255,255,255,0.5);
+    }
+
+    .btn-register {
+      background: var(--accent);
+      border: 1.5px solid var(--accent);
+      color: #000;
+    }
+
+    .btn-register:hover {
+      background: var(--accent-hover);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       MAIN CONTENT
+    ═══════════════════════════════════════════════════════ */
+    .main-view {
+      flex: 1;
+      min-width: 0;
+      overflow-y: auto;
+      background: linear-gradient(180deg, var(--bg-main-from) 0%, var(--bg-main-to) 340px) no-repeat,
+                  var(--bg-main-to);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.12) transparent;
+    }
+
+    .main-view::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .main-view::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .main-view::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.12);
+      border-radius: 3px;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       GLOBAL PLAYER (Right Panel)
+    ═══════════════════════════════════════════════════════ */
+    .player-panel {
+      width: var(--player-w);
+      flex-shrink: 0;
+      background: var(--bg-player);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 20px 24px;
+      gap: 0;
+    }
+
+    .player-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* Cover */
+    .player-cover-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: #1a1a1a;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      margin-bottom: 24px;
+      flex-shrink: 0;
+    }
+
+    #player-cover-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.3s;
+    }
+
+    .cover-placeholder-player {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      background: linear-gradient(135deg, #1f1f1f, #0d0d0d);
+    }
+
+    /* Track meta */
+    .player-meta {
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+
+    #player-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+
+    #player-artist {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Progress */
+    .player-progress {
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+
+    .progress-times {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Range — shared styles */
+    .range-track {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    /* Progress slider */
+    #progress-slider {
+      --val: 0%;
+      background: linear-gradient(to right,
+        var(--accent) 0%,
+        var(--accent) var(--val),
+        rgba(255,255,255,0.15) var(--val),
+        rgba(255,255,255,0.15) 100%);
+    }
+
+    #progress-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      transition: transform 0.15s;
+    }
+
+    #progress-slider:hover::-webkit-slider-thumb {
+      transform: scale(1.3);
+    }
+
+    #progress-slider::-moz-range-thumb {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+    }
+
+    /* Controls */
+    .player-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 22px;
+      flex-shrink: 0;
+    }
+
+    .ctrl-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color var(--transition), background var(--transition), transform 0.12s;
+    }
+
+    .ctrl-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.07);
+    }
+
+    .ctrl-btn:active {
+      transform: scale(0.9);
+    }
+
+    .ctrl-btn-play {
+      width: 52px;
+      height: 52px;
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 4px 20px rgba(29,185,84,0.35);
+    }
+
+    .ctrl-btn-play:hover {
+      background: var(--accent-hover);
+      color: #000;
+      box-shadow: 0 6px 24px rgba(29,185,84,0.5);
+    }
+
+    /* Volume */
+    .player-volume {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .volume-icon {
+      color: var(--text-muted);
+      flex-shrink: 0;
+      width: 16px;
+    }
+
+    #volume-slider {
+      --vol: 80%;
+      flex: 1;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(to right,
+        rgba(255,255,255,0.6) 0%,
+        rgba(255,255,255,0.6) var(--vol),
+        rgba(255,255,255,0.12) var(--vol),
+        rgba(255,255,255,0.12) 100%);
+    }
+
+    #volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.15s;
+    }
+
+    #volume-slider:hover::-webkit-slider-thumb {
+      transform: scale(1.3);
+    }
+
+    #volume-slider::-moz-range-thumb {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+    }
+
+    /* Spacer & hidden audio */
+    .player-spacer {
+      flex: 1;
+    }
+
+    #global-audio {
+      display: none;
+    }
+
+    /* ── Scrollbar for sidebar (hidden) */
+    .sidebar-nav::-webkit-scrollbar { display: none; }
+
+    /* ── Для авторов ────────────────────────────────────── */
+    .sidebar-for-authors {
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .for-authors-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 12px;
+      margin-bottom: 4px;
+    }
+
+    .for-authors-link {
+      color: var(--accent) !important;
+    }
+
+    .for-authors-link .nav-icon {
+      opacity: 1 !important;
+      color: var(--accent);
+    }
+
+    .for-authors-link:hover {
+      background: rgba(29,185,84,0.08) !important;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       MOBILE & RESPONSIVE STYLES
+       Breakpoints:
+         ≤ 768px  — планшет/телефон: sidebar скрыт, плеер внизу
+         ≤ 480px  — маленький телефон: уменьшаем отступы и шрифты
+    ══════════════════════════════════════════════════════════════ */
+
+    /* ── Кнопка-бургер (скрыта на десктопе) ─────────────────── */
+    .burger-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 1100;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #181818;
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background var(--transition);
+      flex-shrink: 0;
+    }
+
+    .burger-btn:hover { background: #282828; }
+
+    /* ── Overlay под открытым sidebar ───────────────────────── */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 900;
+      backdrop-filter: blur(2px);
+    }
+
+    .sidebar-overlay.visible { display: block; }
+
+    /* ── Мобильный плеер-бар внизу ──────────────────────────── */
+    /* На мобильном правая панель заменяется компактной полоской */
+    .mobile-player-bar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 800;
+      background: #0a0a0a;
+      border-top: 1px solid var(--border);
+      padding: 10px 16px;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mobile-player-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mobile-player-cover {
+      width: 42px;
+      height: 42px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #2a2a2a;
+      flex-shrink: 0;
+    }
+
+    .mobile-player-cover img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    .mobile-player-cover .ph { 
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .mobile-player-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mobile-player-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mobile-player-artist {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mobile-player-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .mobile-ctrl-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: color var(--transition);
+    }
+
+    .mobile-ctrl-btn:hover { color: var(--text-primary); }
+
+    .mobile-ctrl-play {
+      width: 40px; height: 40px;
+      background: var(--accent);
+      color: #000;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+
+    .mobile-ctrl-play:hover { background: var(--accent-hover); }
+    .mobile-ctrl-play svg  { transform: translateX(1px); }
+
+    /* Прогресс-бар в мобильном плеере */
+    .mobile-progress {
+      width: 100%;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .mobile-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.25s linear;
+      pointer-events: none;
+    }
+
+    /* ╔══════════════════════════════════════════════════════════╗
+       ║  ПЛАНШЕТ / ТЕЛЕФОН  ≤ 768px                            ║
+       ╚══════════════════════════════════════════════════════════╝ */
+    @media (max-width: 768px) {
+
+      /* Тело — убираем overflow:hidden чтобы страница скроллилась */
+      body {
+        flex-direction: column;
+        height: auto;
+        overflow: auto;
+      }
+
+      /* Показываем бургер */
+      .burger-btn { display: flex; }
+
+      /* Sidebar — абсолютный, скрыт за левым краем */
+      .sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+        width: 260px;
+        overflow-y: auto;
+      }
+
+      /* Sidebar открыт */
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 40px rgba(0,0,0,0.7);
+      }
+
+      /* Основной контент — полная ширина */
+      .main-view {
+        width: 100%;
+        min-height: 100vh;
+        overflow-y: visible;
+        padding-top: 60px;   /* отступ под бургер-кнопку */
+        padding-bottom: 80px; /* отступ под мобильный плеер */
+      }
+
+      /* Правая панель плеера — скрываем */
+      .player-panel { display: none; }
+
+      /* Мобильный плеер — показываем */
+      .mobile-player-bar { display: flex; }
+    }
+
+    /* ╔══════════════════════════════════════════════════════════╗
+       ║  МАЛЕНЬКИЙ ТЕЛЕФОН  ≤ 480px                            ║
+       ╚══════════════════════════════════════════════════════════╝ */
+    @media (max-width: 480px) {
+
+      /* Уменьшаем отступы страниц */
+      .index-page,
+      .popular-page,
+      .playlists-page,
+      .artists-page,
+      .genres-page,
+      .genre-detail-page .genre-main,
+      .submit-page,
+      .create-page {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+      }
+
+      /* Hero жанра */
+      .genre-hero { padding: 32px 14px 24px; }
+
+      /* Гриды — минимум 140px на карточку */
+      .tracks-grid  { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
+      .artists-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+      .genres-grid  { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+      .playlists-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+      .podium       { grid-template-columns: 1fr; gap: 12px; }
+
+      /* Форма создания плейлиста */
+      .create-layout { grid-template-columns: 1fr; }
+      .create-preview { position: static; }
+
+      /* Форма для авторов */
+      .field-row { grid-template-columns: 1fr; }
+
+      /* Заголовки */
+      .index-topbar,
+      .popular-topbar,
+      .artists-topbar,
+      .genres-topbar,
+      .playlists-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      /* Поиск на всю ширину */
+      .search-form { width: 100%; }
+      .search-form input[type="text"] { width: 100%; }
+
+      /* Строки треков */
+      .track-row {
+        grid-template-columns: 20px 40px 1fr;
+        gap: 10px;
+        padding: 7px 8px;
+      }
+
+      /* Скрываем колонку прослушиваний на маленьких экранах */
+      .row-plays,
+      .podium-plays,
+      .detail-row-plays { display: none; }
+
+      /* Карточка плейлиста */
+      .submit-card,
+      .auth-card { padding: 20px 16px; }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+
+</head>
+<body>
+
+  <!-- Бургер-кнопка (видна только на мобильном) -->
+  <button class="burger-btn" id="burger-btn" aria-label="Открыть меню">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="2" y1="5"  x2="16" y2="5"/>
+      <line x1="2" y1="9"  x2="16" y2="9"/>
+      <line x1="2" y1="13" x2="16" y2="13"/>
+    </svg>
+  </button>
+
+  <!-- Оверлей под открытым sidebar -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <circle cx="9" cy="9" r="3.5" fill="#000"/>
+          <circle cx="9" cy="9" r="7" stroke="#000" stroke-width="2" fill="none"/>
+          <path d="M9 2 L9 0 M9 16 L9 18 M2 9 L0 9 M16 9 L18 9"
+                stroke="#000" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="logo-wordmark">OBON</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Меню</span>
+
+      <a href="{% url 'index' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+            <path d="M9 1.5L1.5 7.5V16.5H6.75V11.25H11.25V16.5H16.5V7.5L9 1.5Z"/>
+          </svg>
+        </span>
+        Главная
+      </a>
+
+      <a href="{% url 'popular' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'popular' %}active{% endif %}">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <polyline points="2,13 6,8 10,10 16,4"/>
+            <polyline points="13,4 16,4 16,7"/>
+          </svg>
+        </span>
+        Популярное
+      </a>
+
+      <a href="{% url 'playlists' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'playlists' %}active{% endif %}">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <line x1="2" y1="5" x2="16" y2="5"/>
+            <line x1="2" y1="9" x2="12" y2="9"/>
+            <line x1="2" y1="13" x2="10" y2="13"/>
+            <circle cx="14.5" cy="12.5" r="2.5"/>
+            <line x1="14.5" y1="10" x2="14.5" y2="7" stroke-width="1.5"/>
+          </svg>
+        </span>
+        Плейлисты
+      </a>
+
+      <a href="{% url 'artists' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'artists' %}active{% endif %}">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <circle cx="9" cy="6" r="3"/>
+            <path d="M2 16c0-3.31 3.13-6 7-6s7 2.69 7 6"/>
+          </svg>
+        </span>
+        Исполнители
+      </a>
+
+      <a href="{% url 'genres' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'genres' or request.resolver_match.url_name == 'genre_detail' %}active{% endif %}">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="6" height="6" rx="1.5"/>
+            <rect x="10" y="2" width="6" height="6" rx="1.5"/>
+            <rect x="2" y="10" width="6" height="6" rx="1.5"/>
+            <rect x="10" y="10" width="6" height="6" rx="1.5"/>
+          </svg>
+        </span>
+        Жанры
+      </a>
+    </nav>
+
+    <!-- Для авторов — только для авторизованных -->
+    {% if user.is_authenticated %}
+    <div class="sidebar-for-authors">
+      <div class="for-authors-label">Для авторов</div>
+      <a href="{% url 'submit_track' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'submit_track' %}active{% endif %} for-authors-link">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+               stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 2v10M5 8l4-4 4 4"/>
+            <path d="M3 14h12"/>
+          </svg>
+        </span>
+        Отправить трек
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- User block pinned to bottom -->
+    <div class="sidebar-user">
+      {% if user.is_authenticated %}
+        <div class="user-info">
+          <div class="user-avatar">{{ user.username|first }}</div>
+          <div class="user-meta">
+            <div class="user-name">{{ user.username }}</div>
+            <div class="user-label">Слушатель</div>
+          </div>
+        </div>
+
+        <!-- Logout — CSRF-safe POST form (Django 5.0+) -->
+        <form class="logout-form" method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="logout-btn">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <path d="M5.5 2H2a1 1 0 00-1 1v9a1 1 0 001 1h3.5"/>
+              <polyline points="10,10 13,7.5 10,5"/>
+              <line x1="13" y1="7.5" x2="5.5" y2="7.5"/>
+            </svg>
+            Выйти
+          </button>
+        </form>
+
+      {% else %}
+        <div class="auth-buttons">
+          <a href="{% url 'login' %}" class="btn-auth btn-login">Войти</a>
+          <a href="{% url 'register' %}" class="btn-auth btn-register">Регистрация</a>
+        </div>
+      {% endif %}
+    </div>
+
+  </aside>
+
+
+  <!-- ═══════════════════════════════════════════════════
+       MAIN CONTENT
+  ═══════════════════════════════════════════════════ -->
+  <main class="main-view">
+    {% block content %}{% endblock %}
+  </main>
+
+
+  <!-- ═══════════════════════════════════════════════════
+       GLOBAL PLAYER PANEL (Right)
+  ═══════════════════════════════════════════════════ -->
+  <aside class="player-panel">
+
+    <p class="player-label">Сейчас играет</p>
+
+    <!-- Cover -->
+    <div class="player-cover-wrap">
+      <img id="player-cover-img" src="" alt="" style="opacity:0;">
+      <div class="cover-placeholder-player" id="cover-placeholder">🎵</div>
+    </div>
+
+    <!-- Track meta -->
+    <div class="player-meta">
+      <div id="player-title">Выберите трек</div>
+      <div id="player-artist">—</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="player-progress">
+      <div class="progress-times">
+        <span id="current-time">0:00</span>
+        <span id="total-duration">0:00</span>
+      </div>
+      <input
+        id="progress-slider"
+        class="range-track"
+        type="range"
+        min="0" max="100" step="0.1"
+        value="0"
+        aria-label="Прогресс трека"
+      >
+    </div>
+
+    <!-- Controls -->
+    <div class="player-controls">
+      <button class="ctrl-btn" id="btn-prev" aria-label="Предыдущий трек">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <rect x="3" y="4" width="2.5" height="12" rx="1.25"/>
+          <path d="M17 4L8 10l9 6V4z"/>
+        </svg>
+      </button>
+
+      <button class="ctrl-btn ctrl-btn-play" id="btn-play-pause" aria-label="Воспроизведение / Пауза">
+        <!-- Play icon shown by default -->
+        <svg id="icon-play" width="22" height="22" viewBox="0 0 22 22" fill="currentColor">
+          <path d="M7 4.5l12 6.5-12 6.5V4.5z"/>
+        </svg>
+        <!-- Pause icon (hidden) -->
+        <svg id="icon-pause" width="22" height="22" viewBox="0 0 22 22" fill="currentColor" style="display:none;">
+          <rect x="5" y="4" width="4" height="14" rx="2"/>
+          <rect x="13" y="4" width="4" height="14" rx="2"/>
+        </svg>
+      </button>
+
+      <button class="ctrl-btn" id="btn-next" aria-label="Следующий трек">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <rect x="14.5" y="4" width="2.5" height="12" rx="1.25"/>
+          <path d="M3 4l9 6-9 6V4z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Volume -->
+    <div class="player-volume">
+      <span class="volume-icon" id="volume-icon-wrap">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M3 5.5H1a1 1 0 00-1 1v3a1 1 0 001 1h2l4 3.5V2L3 5.5z"/>
+          <path id="vol-mid" d="M11 4.7a5 5 0 010 6.6" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/>
+          <path id="vol-hi"  d="M13.5 2.5a8 8 0 010 11" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <input
+        id="volume-slider"
+        class="range-track"
+        type="range"
+        min="0" max="1" step="0.05"
+        value="0.8"
+        aria-label="Громкость"
+      >
+    </div>
+
+    <div class="player-spacer"></div>
+
+    <!-- Single global audio element -->
+    <audio id="global-audio"></audio>
+  </aside>
+
+
+  <!-- ═══════════════════════════════════════════════════
+       GLOBAL PLAYER SCRIPT
+  ═══════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── DOM refs ─────────────────────────────────── */
+      const audio          = document.getElementById('global-audio');
+      const coverImg       = document.getElementById('player-cover-img');
+      const coverHolder    = document.getElementById('cover-placeholder');
+      const titleEl        = document.getElementById('player-title');
+      const artistEl       = document.getElementById('player-artist');
+      const currentTimeEl  = document.getElementById('current-time');
+      const totalDurEl     = document.getElementById('total-duration');
+      const progressSlider = document.getElementById('progress-slider');
+      const btnPlayPause   = document.getElementById('btn-play-pause');
+      const iconPlay       = document.getElementById('icon-play');
+      const iconPause      = document.getElementById('icon-pause');
+      const btnPrev        = document.getElementById('btn-prev');
+      const btnNext        = document.getElementById('btn-next');
+      const volumeSlider   = document.getElementById('volume-slider');
+
+      /* ── State ────────────────────────────────────── */
+      let currentQueueIndex = -1;
+
+      /* ── Helpers ──────────────────────────────────── */
+
+      /**
+       * formatTime(seconds) → "M:SS"
+       */
+      function formatTime(seconds) {
+        if (isNaN(seconds) || seconds < 0) return '0:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+      }
+
+      /** Update the CSS gradient fill on a range input */
+      function updateRangeFill(el, value, min, max, prop) {
+        const pct = ((value - min) / (max - min)) * 100;
+        el.style.setProperty(prop, pct + '%');
+      }
+
+      /** Set play/pause icon visibility */
+      function setPlayingState(playing) {
+        iconPlay.style.display  = playing ? 'none'  : 'block';
+        iconPause.style.display = playing ? 'block' : 'none';
+      }
+
+      /* ── Core: load and play a track ─────────────── */
+
+      /**
+       * loadAndPlayTrack(url, title, artist, coverUrl)
+       * Updates the player UI and starts playback.
+       */
+      function loadAndPlayTrack(url, title, artist, coverUrl) {
+        // Update meta text
+        titleEl.textContent  = title  || 'Без названия';
+        artistEl.textContent = artist || '—';
+
+        // Update cover
+        if (coverUrl && coverUrl !== 'none') {
+          coverImg.src = coverUrl;
+          coverImg.alt = title;
+          coverImg.onload = () => { coverImg.style.opacity = '1'; };
+          coverHolder.style.display = 'none';
+        } else {
+          coverImg.style.opacity = '0';
+          coverHolder.style.display = 'flex';
+        }
+
+        // Reset progress
+        progressSlider.value = 0;
+        updateRangeFill(progressSlider, 0, 0, 100, '--val');
+        currentTimeEl.textContent = '0:00';
+        totalDurEl.textContent    = '0:00';
+
+        // Load and play
+        audio.src = url;
+        audio.play().catch(() => {
+          // Autoplay blocked — update UI to paused state
+          setPlayingState(false);
+        });
+      }
+
+      /* ── Queue control ────────────────────────────── */
+
+      /**
+       * playFromQueue(index)
+       * Exposed globally so track cards in index.html can call it.
+       */
+      window.playFromQueue = function (index) {
+        const queue = window.currentPlaylistQueue;
+        if (!queue || !queue.length) return;
+
+        const clamped = Math.max(0, Math.min(index, queue.length - 1));
+        currentQueueIndex = clamped;
+
+        const track = queue[clamped];
+        loadAndPlayTrack(track.url, track.title, track.artist, track.cover);
+
+        // ── Счётчик прослушиваний ──────────────────────────────
+        // Вызываем API только если у трека есть id (он передаётся
+        // из шаблонов через window.currentPlaylistQueue[i].id)
+        if (track.id) {
+          const csrfToken = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1] || '';
+
+          fetch('/api/track/' + track.id + '/play/', {
+            method:  'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+          }).catch(function () {
+            // Молча игнорируем ошибки сети — счётчик некритичен
+          });
+        }
+      };
+
+      /* ── Audio event handlers ─────────────────────── */
+
+      audio.ontimeupdate = function () {
+        if (!audio.duration) return;
+        const pct = (audio.currentTime / audio.duration) * 100;
+        progressSlider.value = pct;
+        updateRangeFill(progressSlider, pct, 0, 100, '--val');
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+      };
+
+      audio.onloadedmetadata = function () {
+        totalDurEl.textContent = formatTime(audio.duration);
+      };
+
+      audio.onplay = function () {
+        setPlayingState(true);
+      };
+
+      audio.onpause = function () {
+        setPlayingState(false);
+      };
+
+      audio.onended = function () {
+        const queue = window.currentPlaylistQueue;
+        if (queue && currentQueueIndex + 1 < queue.length) {
+          // Auto-advance to next track
+          window.playFromQueue(currentQueueIndex + 1);
+        } else {
+          // End of queue — reset UI
+          setPlayingState(false);
+          progressSlider.value = 0;
+          updateRangeFill(progressSlider, 0, 0, 100, '--val');
+          currentTimeEl.textContent = '0:00';
+          if (audio.duration) {
+            totalDurEl.textContent = formatTime(audio.duration);
+          }
+        }
+      };
+
+      audio.onerror = function () {
+        setPlayingState(false);
+      };
+
+      /* ── Controls ─────────────────────────────────── */
+
+      btnPlayPause.addEventListener('click', function () {
+        if (!audio.src) return;
+        if (audio.paused) {
+          audio.play();
+        } else {
+          audio.pause();
+        }
+      });
+
+      btnPrev.addEventListener('click', function () {
+        const queue = window.currentPlaylistQueue;
+        if (!queue || !queue.length) return;
+
+        // If more than 3 seconds in, restart current track
+        if (audio.currentTime > 3) {
+          audio.currentTime = 0;
+          return;
+        }
+
+        if (currentQueueIndex > 0) {
+          window.playFromQueue(currentQueueIndex - 1);
+        } else {
+          audio.currentTime = 0;
+        }
+      });
+
+      btnNext.addEventListener('click', function () {
+        const queue = window.currentPlaylistQueue;
+        if (!queue || !queue.length) return;
+        if (currentQueueIndex + 1 < queue.length) {
+          window.playFromQueue(currentQueueIndex + 1);
+        }
+      });
+
+      progressSlider.addEventListener('input', function () {
+        if (!audio.duration) return;
+        const seekTo = (parseFloat(this.value) / 100) * audio.duration;
+        audio.currentTime = seekTo;
+        updateRangeFill(this, parseFloat(this.value), 0, 100, '--val');
+      });
+
+      volumeSlider.addEventListener('input', function () {
+        const vol = parseFloat(this.value);
+        audio.volume = vol;
+        updateRangeFill(this, vol, 0, 1, '--vol');
+      });
+
+      // Set initial volume
+      audio.volume = parseFloat(volumeSlider.value);
+      updateRangeFill(volumeSlider, parseFloat(volumeSlider.value), 0, 1, '--vol');
+
+    })();
+  </script>
+
+
+
+  <!-- ═══════════════════════════════════════════════════
+       МОБИЛЬНЫЙ ПЛЕЕР (показывается на экранах ≤ 768px)
+       Синхронизируется с глобальным audio из правой панели
+  ═══════════════════════════════════════════════════ -->
+  <div class="mobile-player-bar" id="mobile-player-bar">
+
+    <!-- Прогресс вверху плеер-бара -->
+    <div class="mobile-progress" id="mobile-progress" onclick="mobileSeek(event)">
+      <div class="mobile-progress-fill" id="mobile-progress-fill"></div>
+    </div>
+
+    <div class="mobile-player-top">
+
+      <!-- Обложка -->
+      <div class="mobile-player-cover" id="mobile-cover">
+        <div class="ph">🎵</div>
+      </div>
+
+      <!-- Название и артист -->
+      <div class="mobile-player-info">
+        <div class="mobile-player-title"  id="mobile-title">Выберите трек</div>
+        <div class="mobile-player-artist" id="mobile-artist">—</div>
+      </div>
+
+      <!-- Кнопки управления -->
+      <div class="mobile-player-controls">
+        <button class="mobile-ctrl-btn" onclick="document.getElementById('btn-prev').click()" aria-label="Назад">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+            <rect x="2.5" y="3.5" width="2.5" height="11" rx="1.25"/>
+            <path d="M16 3.5L8 9l8 5.5V3.5z"/>
+          </svg>
+        </button>
+
+        <button class="mobile-ctrl-play" id="mobile-play-btn"
+                onclick="document.getElementById('btn-play-pause').click()" aria-label="Воспроизведение">
+          <svg id="mobile-icon-play" width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+            <path d="M5 3.5l11 5.5-11 5.5V3.5z"/>
+          </svg>
+          <svg id="mobile-icon-pause" width="18" height="18" viewBox="0 0 18 18" fill="currentColor" style="display:none">
+            <rect x="4" y="3" width="3.5" height="12" rx="1.5"/>
+            <rect x="10.5" y="3" width="3.5" height="12" rx="1.5"/>
+          </svg>
+        </button>
+
+        <button class="mobile-ctrl-btn" onclick="document.getElementById('btn-next').click()" aria-label="Вперёд">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+            <rect x="13" y="3.5" width="2.5" height="11" rx="1.25"/>
+            <path d="M2 3.5l8 5.5-8 5.5V3.5z"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </div><!-- /mobile-player-bar -->
+
+
+  <!-- ═══════════════════════════════════════════════════
+       МОБИЛЬНЫЙ JS
+  ═══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+
+    /* ── Бургер-меню ──────────────────────────────────────── */
+    var burgerBtn  = document.getElementById('burger-btn');
+    var sidebar    = document.querySelector('.sidebar');
+    var overlay    = document.getElementById('sidebar-overlay');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    if (burgerBtn) {
+      burgerBtn.addEventListener('click', openSidebar);
+    }
+
+    if (overlay) {
+      overlay.addEventListener('click', closeSidebar);
+    }
+
+    /* Закрываем sidebar при клике на nav-ссылку (мобильный) */
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 768) closeSidebar();
+      });
+    });
+
+    /* ── Синхронизация мобильного плеера с десктопным ──────── */
+    var audio            = document.getElementById('global-audio');
+    var mobileTitle      = document.getElementById('mobile-title');
+    var mobileArtist     = document.getElementById('mobile-artist');
+    var mobileCover      = document.getElementById('mobile-cover');
+    var mobileProgFill   = document.getElementById('mobile-progress-fill');
+    var mobileIconPlay   = document.getElementById('mobile-icon-play');
+    var mobileIconPause  = document.getElementById('mobile-icon-pause');
+
+    /* Следим за изменением src аудио — значит сменился трек */
+    var observer = new MutationObserver(function () {
+      syncMobileUI();
+    });
+
+    /* Обновляем UI мобильного плеера из десктопных элементов */
+    function syncMobileUI() {
+      var title  = document.getElementById('player-title');
+      var artist = document.getElementById('player-artist');
+      var cover  = document.getElementById('player-cover-img');
+
+      if (title)  mobileTitle.textContent  = title.textContent;
+      if (artist) mobileArtist.textContent = artist.textContent;
+
+      if (cover && cover.src && cover.style.opacity !== '0') {
+        mobileCover.innerHTML = '<img src="' + cover.src + '" alt="">';
+      } else {
+        mobileCover.innerHTML = '<div class="ph">🎵</div>';
+      }
+    }
+
+    /* Прогресс */
+    if (audio) {
+      audio.addEventListener('timeupdate', function () {
+        if (!audio.duration) return;
+        var pct = (audio.currentTime / audio.duration) * 100;
+        if (mobileProgFill) mobileProgFill.style.width = pct + '%';
+      });
+
+      audio.addEventListener('play', function () {
+        if (mobileIconPlay)  mobileIconPlay.style.display  = 'none';
+        if (mobileIconPause) mobileIconPause.style.display = 'block';
+        syncMobileUI();
+      });
+
+      audio.addEventListener('pause', function () {
+        if (mobileIconPlay)  mobileIconPlay.style.display  = 'block';
+        if (mobileIconPause) mobileIconPause.style.display = 'none';
+      });
+    }
+
+    /* Перемотка по клику на прогресс-бар */
+    window.mobileSeek = function (e) {
+      if (!audio || !audio.duration) return;
+      var bar  = document.getElementById('mobile-progress');
+      var rect = bar.getBoundingClientRect();
+      var pct  = (e.clientX - rect.left) / rect.width;
+      audio.currentTime = pct * audio.duration;
+    };
+
+    /* Патчим loadAndPlayTrack чтобы мобильный UI обновлялся */
+    document.addEventListener('DOMContentLoaded', function () {
+      var _origLoad = window.loadAndPlayTrack;
+      if (_origLoad) {
+        window.loadAndPlayTrack = function (url, title, artist, coverUrl) {
+          _origLoad(url, title, artist, coverUrl);
+          /* Небольшая задержка — ждём пока десктопный UI обновится */
+          setTimeout(syncMobileUI, 50);
+        };
+      }
+    });
+
+  }());
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,938 @@
+{% extends 'streaming/base.html' %}
+
+{% block title %} — Новый плейлист{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ══════════════════════════════════════════════
+     CREATE PLAYLIST — inherits all vars from base.html
+  ══════════════════════════════════════════════ */
+
+  .create-page {
+    padding: 32px 32px 64px;
+    min-height: 100%;
+    max-width: 860px;
+  }
+
+  /* ── Breadcrumb ───────────────────────────── */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 28px;
+    font-size: 13px;
+    color: var(--text-muted);
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .breadcrumb a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition);
+  }
+
+  .breadcrumb a:hover { color: var(--text-primary); }
+
+  .breadcrumb .sep {
+    font-size: 11px;
+    opacity: 0.4;
+  }
+
+  .breadcrumb .current { color: var(--text-secondary); }
+
+  /* ── Page heading ─────────────────────────── */
+  .create-heading {
+    margin-bottom: 36px;
+    animation: fadeUp 0.35s ease 0.04s both;
+  }
+
+  .create-heading h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .create-heading p {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  /* ══════════════════════════════════════════════
+     FORM LAYOUT: две колонки
+     Левая — поля + кнопки
+     Правая — превью плейлиста
+  ══════════════════════════════════════════════ */
+  .create-layout {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ── Left column ──────────────────────────── */
+  .create-form { animation: fadeUp 0.38s ease 0.08s both; }
+
+  /* ── Field group ──────────────────────────── */
+  .field-group {
+    margin-bottom: 24px;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .field-label .required {
+    color: var(--accent);
+    margin-left: 2px;
+  }
+
+  /* Text / Textarea inputs */
+  .field-input,
+  .field-textarea {
+    width: 100%;
+    background: #1e1e1e;
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 13px 16px;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    -webkit-appearance: none;
+  }
+
+  .field-input::placeholder,
+  .field-textarea::placeholder { color: var(--text-muted); }
+
+  .field-input:focus,
+  .field-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.12);
+  }
+
+  /* Validation error state */
+  .field-input.is-error,
+  .field-textarea.is-error {
+    border-color: #e55;
+    box-shadow: 0 0 0 3px rgba(220,50,50,0.12);
+  }
+
+  .field-error-msg {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #e55;
+    display: none;
+  }
+
+  .field-group.has-error .field-error-msg { display: block; }
+  .field-group.has-error .field-input,
+  .field-group.has-error .field-textarea   { border-color: #e55; box-shadow: 0 0 0 3px rgba(220,50,50,0.12); }
+
+  .field-textarea {
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.5;
+  }
+
+  /* Char counter */
+  .field-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 5px;
+  }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .char-count.near-limit { color: #f7c948; }
+  .char-count.at-limit   { color: #e55; }
+
+  /* ── Django form errors (server-side) ─────── */
+  .server-errors {
+    background: rgba(220,50,50,0.1);
+    border: 1px solid rgba(220,50,50,0.25);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: #f08080;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .server-errors ul {
+    padding-left: 18px;
+    margin: 0;
+  }
+
+  /* ══════════════════════════════════════════════
+     TRACK SELECTOR
+  ══════════════════════════════════════════════ */
+  .track-selector-wrap {
+    margin-bottom: 28px;
+  }
+
+  /* Search inside selector */
+  .selector-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #1e1e1e;
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 0 14px;
+    margin-bottom: 10px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+
+  .selector-search:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.12);
+  }
+
+  .selector-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 11px 0;
+  }
+
+  .selector-search input::placeholder { color: var(--text-muted); }
+
+  .selector-search svg { color: var(--text-muted); flex-shrink: 0; }
+
+  /* Track list */
+  .track-list-box {
+    background: #141414;
+    border: 1.5px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+
+  .track-list-box::-webkit-scrollbar { width: 5px; }
+  .track-list-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+  /* Individual selectable row */
+  .track-select-row {
+    display: grid;
+    grid-template-columns: 36px 40px 1fr 36px;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background var(--transition);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .track-select-row:last-child { border-bottom: none; }
+  .track-select-row:hover      { background: rgba(255,255,255,0.04); }
+  .track-select-row.selected   { background: rgba(29,185,84,0.08); }
+
+  /* Custom checkbox */
+  .track-checkbox {
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid rgba(255,255,255,0.18);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color var(--transition), background var(--transition);
+  }
+
+  .track-select-row.selected .track-checkbox {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .track-checkbox svg { display: none; }
+  .track-select-row.selected .track-checkbox svg { display: block; }
+
+  /* Row thumbnail */
+  .sel-thumb {
+    width: 40px; height: 40px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #2a2a2a;
+    flex-shrink: 0;
+  }
+
+  .sel-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+
+  .sel-thumb .cover-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg,#252525,#161616);
+  }
+
+  /* Row meta */
+  .sel-meta { min-width: 0; }
+
+  .sel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .track-select-row.selected .sel-title { color: var(--accent); }
+
+  .sel-artist {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+
+  /* Add/remove pill */
+  .sel-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background var(--transition);
+    color: var(--text-muted);
+  }
+
+  .track-select-row:hover .sel-action      { color: var(--text-primary); background: rgba(255,255,255,0.08); }
+  .track-select-row.selected .sel-action   { color: #e55; background: rgba(220,50,50,0.1); }
+
+  /* Empty / no results inside box */
+  .track-list-empty {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* Selection summary */
+  .selection-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .summary-count { color: var(--accent); font-weight: 600; }
+
+  .btn-clear-sel {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    transition: color var(--transition);
+  }
+
+  .btn-clear-sel:hover { color: #e55; }
+
+  /* ── Form actions ─────────────────────────── */
+  .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 8px;
+  }
+
+  .btn-submit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 30px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: background var(--transition), transform 0.1s, box-shadow var(--transition);
+  }
+
+  .btn-submit:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 4px 20px rgba(29,185,84,0.3);
+  }
+
+  .btn-submit:active  { transform: scale(0.97); }
+
+  .btn-submit:disabled {
+    background: #333;
+    color: var(--text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn-cancel {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 30px;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 24px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color var(--transition), color var(--transition);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn-cancel:hover { border-color: rgba(255,255,255,0.3); color: var(--text-primary); }
+
+  /* ══════════════════════════════════════════════
+     RIGHT COLUMN — Live preview
+  ══════════════════════════════════════════════ */
+  .create-preview {
+    position: sticky;
+    top: 32px;
+    animation: fadeUp 0.38s ease 0.12s both;
+  }
+
+  .preview-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+
+  /* Preview card (mirrors playlist-card from playlists.html) */
+  .preview-card {
+    background: #181818;
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .preview-mosaic {
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #2a2a2a;
+    margin-bottom: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+  }
+
+  .preview-mosaic-grid {
+    width: 100%; height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+  }
+
+  .preview-cell {
+    overflow: hidden;
+    background: #333;
+  }
+
+  .preview-cell img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+
+  .preview-cell-ph {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg,#2a2a2a,#1a1a1a);
+  }
+
+  .preview-single {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem;
+    background: linear-gradient(135deg,#252525,#161616);
+  }
+
+  .preview-single img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+
+  .preview-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+
+  .preview-name.placeholder { color: var(--text-muted); font-weight: 400; font-style: italic; }
+
+  .preview-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ── Animation ────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+
+<div class="create-page">
+
+  <!-- ── Breadcrumb ── -->
+  <nav class="breadcrumb" aria-label="Навигация">
+    <a href="{% url 'index' %}">Главная</a>
+    <span class="sep">›</span>
+    <a href="{% url 'playlists' %}">Плейлисты</a>
+    <span class="sep">›</span>
+    <span class="current">Новый плейлист</span>
+  </nav>
+
+  <!-- ── Heading ── -->
+  <div class="create-heading">
+    <h1>Новый плейлист</h1>
+    <p>Заполните детали и выберите треки из вашей библиотеки</p>
+  </div>
+
+
+  <!-- ── Server-side errors ── -->
+  {% if form_error %}
+  <div class="server-errors">
+    {{ form_error }}
+  </div>
+  {% endif %}
+
+
+  <div class="create-layout">
+
+    <!-- ════════════════════════════════════════
+         LEFT — form fields
+    ════════════════════════════════════════ -->
+    <div class="create-form">
+      <form
+        id="create-form"
+        method="POST"
+        action="{% url 'playlist_create' %}"
+        novalidate
+      >
+        {% csrf_token %}
+
+        <!-- Name -->
+        <div class="field-group" id="fg-name">
+          <label class="field-label" for="id_name">
+            Название <span class="required">*</span>
+          </label>
+          <input
+            class="field-input"
+            type="text"
+            id="id_name"
+            name="name"
+            value="{{ posted_name|default:'' }}"
+            placeholder="Например: Для утренней пробежки"
+            maxlength="100"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <div class="field-footer">
+            <span class="char-count" id="name-count">0 / 100</span>
+          </div>
+          <div class="field-error-msg" id="name-error">Введите название плейлиста</div>
+        </div>
+
+        <!-- Description -->
+        <div class="field-group" id="fg-desc">
+          <label class="field-label" for="id_description">Описание</label>
+          <textarea
+            class="field-textarea"
+            id="id_description"
+            name="description"
+            placeholder="Краткое описание (необязательно)"
+            maxlength="300"
+            rows="3"
+          >{{ posted_desc|default:'' }}</textarea>
+          <div class="field-footer">
+            <span class="char-count" id="desc-count">0 / 300</span>
+          </div>
+        </div>
+
+        <!-- Track selector -->
+        <div class="field-group track-selector-wrap">
+          <label class="field-label">Треки в плейлисте</label>
+
+          <div class="selector-search">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input
+              type="text"
+              id="track-search"
+              placeholder="Поиск трека или исполнителя…"
+              autocomplete="off"
+            >
+          </div>
+
+          <div class="track-list-box" id="track-list-box">
+            {% if all_tracks %}
+              {% for track in all_tracks %}
+              <div
+                class="track-select-row"
+                id="tsr-{{ track.pk }}"
+                data-pk="{{ track.pk }}"
+                data-title="{{ track.title|escapejs }}"
+                data-artist="{{ track.artist|escapejs }}"
+                data-cover="{% if track.cover %}{{ track.cover.url }}{% else %}none{% endif %}"
+                onclick="toggleTrack({{ track.pk }})"
+              >
+                <!-- Custom checkbox -->
+                <div class="track-checkbox">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                       stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1.5,5 4,7.5 8.5,2"/>
+                  </svg>
+                </div>
+
+                <!-- Thumbnail -->
+                <div class="sel-thumb">
+                  {% if track.cover %}
+                    <img src="{{ track.cover.url }}" alt="{{ track.title|escapejs }}" loading="lazy">
+                  {% else %}
+                    <div class="cover-placeholder">🎵</div>
+                  {% endif %}
+                </div>
+
+                <!-- Meta -->
+                <div class="sel-meta">
+                  <div class="sel-title">{{ track.title }}</div>
+                  <div class="sel-artist">{{ track.artist }}</div>
+                </div>
+
+                <!-- Add / remove icon -->
+                <div class="sel-action">
+                  <svg class="icon-add"    width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                    <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <svg class="icon-remove" width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style="display:none;">
+                    <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+
+                {# Скрытый input — будет добавлен / удалён через JS #}
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="track-list-empty">В библиотеке пока нет треков</div>
+            {% endif %}
+          </div>
+
+          <div class="selection-summary">
+            <span>Выбрано: <span class="summary-count" id="selected-count">0</span></span>
+            <button type="button" class="btn-clear-sel" onclick="clearSelection()">
+              Снять всё
+            </button>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button type="submit" class="btn-submit" id="btn-submit">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M1 7l4 4 8-8" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            Создать плейлист
+          </button>
+          <a href="{% url 'playlists' %}" class="btn-cancel">Отмена</a>
+        </div>
+
+      </form>
+    </div><!-- /create-form -->
+
+
+    <!-- ════════════════════════════════════════
+         RIGHT — live preview
+    ════════════════════════════════════════ -->
+    <div class="create-preview">
+      <div class="preview-label">Превью</div>
+      <div class="preview-card">
+        <div class="preview-mosaic" id="preview-mosaic">
+          <div class="preview-single" id="preview-single">🎵</div>
+        </div>
+        <div class="preview-name placeholder" id="preview-name">Название плейлиста</div>
+        <div class="preview-meta" id="preview-meta">0 треков</div>
+      </div>
+    </div>
+
+  </div><!-- /create-layout -->
+
+</div><!-- /create-page -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── State ──────────────────────────────────────────── */
+  var selectedPks = [];   // массив pk выбранных треков (порядок важен)
+  var form        = document.getElementById('create-form');
+  var listBox     = document.getElementById('track-list-box');
+
+  /* ── Toggle track selection ─────────────────────────── */
+  window.toggleTrack = function (pk) {
+    var row   = document.getElementById('tsr-' + pk);
+    var idx   = selectedPks.indexOf(pk);
+
+    if (idx === -1) {
+      /* добавляем */
+      selectedPks.push(pk);
+      row.classList.add('selected');
+      row.querySelector('.icon-add').style.display    = 'none';
+      row.querySelector('.icon-remove').style.display = 'block';
+      addHiddenInput(pk);
+    } else {
+      /* убираем */
+      selectedPks.splice(idx, 1);
+      row.classList.remove('selected');
+      row.querySelector('.icon-add').style.display    = 'block';
+      row.querySelector('.icon-remove').style.display = 'none';
+      removeHiddenInput(pk);
+    }
+
+    updateSummary();
+    updatePreview();
+  };
+
+  /* ── Hidden inputs for POST ─────────────────────────── */
+  function addHiddenInput(pk) {
+    var inp = document.createElement('input');
+    inp.type  = 'hidden';
+    inp.name  = 'tracks';
+    inp.value = pk;
+    inp.id    = 'hidden-track-' + pk;
+    form.appendChild(inp);
+  }
+
+  function removeHiddenInput(pk) {
+    var inp = document.getElementById('hidden-track-' + pk);
+    if (inp) inp.remove();
+  }
+
+  /* ── Clear all selection ────────────────────────────── */
+  window.clearSelection = function () {
+    selectedPks.slice().forEach(function (pk) {
+      window.toggleTrack(pk);
+    });
+  };
+
+  /* ── Summary counter ────────────────────────────────── */
+  function updateSummary() {
+    document.getElementById('selected-count').textContent = selectedPks.length;
+  }
+
+  /* ── Live preview ───────────────────────────────────── */
+  function updatePreview() {
+    var nameEl   = document.getElementById('preview-name');
+    var metaEl   = document.getElementById('preview-meta');
+    var mosaicEl = document.getElementById('preview-mosaic');
+
+    /* Name */
+    var nameVal = document.getElementById('id_name').value.trim();
+    if (nameVal) {
+      nameEl.textContent = nameVal;
+      nameEl.classList.remove('placeholder');
+    } else {
+      nameEl.textContent = 'Название плейлиста';
+      nameEl.classList.add('placeholder');
+    }
+
+    /* Track count */
+    var n = selectedPks.length;
+    metaEl.textContent = pluralizeRu(n, 'трек', 'трека', 'треков');
+
+    /* Mosaic */
+    mosaicEl.innerHTML = '';
+
+    var covers = selectedPks
+      .map(function (pk) {
+        var row = document.getElementById('tsr-' + pk);
+        return row ? row.getAttribute('data-cover') : 'none';
+      })
+      .filter(function (c) { return c && c !== 'none'; });
+
+    if (selectedPks.length >= 4 && covers.length >= 4) {
+      /* 2×2 grid */
+      var grid = document.createElement('div');
+      grid.className = 'preview-mosaic-grid';
+      covers.slice(0, 4).forEach(function (src) {
+        var cell = document.createElement('div');
+        cell.className = 'preview-cell';
+        var img = document.createElement('img');
+        img.src = src;
+        img.alt = '';
+        cell.appendChild(img);
+        grid.appendChild(cell);
+      });
+      mosaicEl.appendChild(grid);
+
+    } else if (covers.length >= 1) {
+      /* single cover */
+      var single = document.createElement('div');
+      single.className = 'preview-single';
+      var img = document.createElement('img');
+      img.src = covers[0];
+      img.alt = '';
+      single.appendChild(img);
+      mosaicEl.appendChild(single);
+
+    } else {
+      /* placeholder */
+      var ph = document.createElement('div');
+      ph.className = 'preview-single';
+      ph.textContent = '🎵';
+      mosaicEl.appendChild(ph);
+    }
+  }
+
+  /* ── Name field: char counter + live preview ─────────── */
+  var nameInput = document.getElementById('id_name');
+  var nameCount = document.getElementById('name-count');
+
+  nameInput.addEventListener('input', function () {
+    var len = this.value.length;
+    nameCount.textContent = len + ' / 100';
+    nameCount.className = 'char-count' +
+      (len >= 100 ? ' at-limit' : len >= 85 ? ' near-limit' : '');
+    updatePreview();
+    /* clear error on type */
+    document.getElementById('fg-name').classList.remove('has-error');
+  });
+
+  /* init counter */
+  nameCount.textContent = nameInput.value.length + ' / 100';
+
+  /* ── Description: char counter ───────────────────────── */
+  var descInput = document.getElementById('id_description');
+  var descCount = document.getElementById('desc-count');
+
+  descInput.addEventListener('input', function () {
+    var len = this.value.length;
+    descCount.textContent = len + ' / 300';
+    descCount.className = 'char-count' +
+      (len >= 300 ? ' at-limit' : len >= 260 ? ' near-limit' : '');
+  });
+
+  descCount.textContent = descInput.value.length + ' / 300';
+
+  /* ── Track search filter ─────────────────────────────── */
+  document.getElementById('track-search').addEventListener('input', function () {
+    var q = this.value.toLowerCase().trim();
+    var rows = listBox.querySelectorAll('.track-select-row');
+    var anyVisible = false;
+
+    rows.forEach(function (row) {
+      var title  = (row.getAttribute('data-title')  || '').toLowerCase();
+      var artist = (row.getAttribute('data-artist') || '').toLowerCase();
+      var match  = !q || title.includes(q) || artist.includes(q);
+      row.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+
+    /* no-results message */
+    var noRes = listBox.querySelector('.no-results-msg');
+    if (!anyVisible && q) {
+      if (!noRes) {
+        var msg = document.createElement('div');
+        msg.className = 'track-list-empty no-results-msg';
+        msg.textContent = 'Ничего не найдено';
+        listBox.appendChild(msg);
+      }
+    } else if (noRes) {
+      noRes.remove();
+    }
+  });
+
+  /* ── Client-side form validation ────────────────────── */
+  form.addEventListener('submit', function (e) {
+    var valid = true;
+    var nameVal = nameInput.value.trim();
+
+    if (!nameVal) {
+      document.getElementById('fg-name').classList.add('has-error');
+      nameInput.focus();
+      valid = false;
+    }
+
+    if (!valid) {
+      e.preventDefault();
+    }
+  });
+
+  /* ── Restore selection if form returned with errors ─── */
+  {% if posted_tracks %}
+  (function () {
+    var posted = [{{ posted_tracks|join:"," }}].filter(Boolean);
+    posted.forEach(function (pk) {
+      if (document.getElementById('tsr-' + pk)) {
+        window.toggleTrack(pk);
+      }
+    });
+  }());
+  {% endif %}
+
+  /* ── Helper ──────────────────────────────────────────── */
+  function pluralizeRu(n, one, few, many) {
+    var m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11)                        return n + ' ' + one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return n + ' ' + few;
+    return n + ' ' + many;
+  }
+
+  /* Initial preview render */
+  updatePreview();
+
+}());
+</script>
+
+{% endblock %}

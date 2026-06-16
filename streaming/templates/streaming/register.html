@@ -1,0 +1,750 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OBON — Регистрация</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --accent:        #1b4d8d;
+      --accent-hover:  #143a6b;
+      --bg:            #0a0a0a;
+      --bg-card:       #141414;
+      --bg-input:      #1e1e1e;
+      --border:        rgba(255,255,255,0.08);
+      --text-primary:  #ffffff;
+      --text-secondary:#a0a0a0;
+      --text-muted:    #555;
+      --error:         #e05555;
+      --error-bg:      rgba(224,85,85,0.1);
+      --pw-weak:       #e05555;
+      --pw-fair:       #f7c948;
+      --pw-good:       #6bcb77;
+      --pw-strong:     #1DB954;
+      --transition:    0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Animated background ────────────────── */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bg-glow::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(29,185,84,0.07) 0%, transparent 70%);
+      top: -160px; right: -180px;
+      animation: drift 20s ease-in-out infinite alternate;
+    }
+
+    .bg-glow::after {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(29,185,84,0.04) 0%, transparent 70%);
+      bottom: -80px; left: -120px;
+      animation: drift 25s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0,0); }
+      to   { transform: translate(50px,35px); }
+    }
+
+    /* ── Page layout ────────────────────────── */
+    .auth-page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    /* ── Logo ───────────────────────────────── */
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 36px;
+      text-decoration: none;
+      animation: fadeDown 0.4s ease both;
+    }
+
+    .logo-mark {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-wordmark {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: var(--text-primary);
+    }
+
+    /* ── Card ───────────────────────────────── */
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-card);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 36px 36px 32px;
+      animation: fadeUp 0.4s ease 0.06s both;
+    }
+
+    .auth-card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .auth-card-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    /* ── Error banner ───────────────────────── */
+    .error-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--error-bg);
+      border: 1px solid rgba(224,85,85,0.25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 22px;
+      font-size: 13px;
+      color: #f08080;
+      line-height: 1.4;
+      animation: shake 0.35s ease both;
+    }
+
+    .error-banner svg { flex-shrink: 0; margin-top: 1px; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-5px); }
+      40%      { transform: translateX(5px); }
+      60%      { transform: translateX(-3px); }
+      80%      { transform: translateX(3px); }
+    }
+
+    /* ── Field group ────────────────────────── */
+    .field-group { margin-bottom: 16px; }
+
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .field-label .opt {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+
+    .input-wrap { position: relative; }
+
+    .field-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 13px 16px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      -webkit-appearance: none;
+    }
+
+    .field-input::placeholder { color: var(--text-muted); }
+
+    .field-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(29,185,84,0.12);
+    }
+
+    .field-input.is-error {
+      border-color: var(--error) !important;
+      box-shadow: 0 0 0 3px rgba(224,85,85,0.12) !important;
+    }
+
+    .field-input.is-valid {
+      border-color: var(--accent);
+    }
+
+    .field-input.has-toggle { padding-right: 46px; }
+
+    /* Inline field hint */
+    .field-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      min-height: 16px;
+      transition: color var(--transition);
+    }
+
+    .field-hint.is-error { color: var(--error); }
+    .field-hint.is-ok    { color: var(--accent); }
+
+    /* Show/hide password toggle */
+    .toggle-pw {
+      position: absolute;
+      right: 13px; top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      transition: color var(--transition);
+    }
+
+    .toggle-pw:hover { color: var(--text-secondary); }
+
+    /* ── Password strength bar ──────────────── */
+    .pw-strength {
+      margin-top: 10px;
+    }
+
+    .pw-strength-bars {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 5px;
+    }
+
+    .pw-bar {
+      flex: 1;
+      height: 3px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.08);
+      transition: background 0.3s;
+    }
+
+    .pw-bar.active-1 { background: var(--pw-weak); }
+    .pw-bar.active-2 { background: var(--pw-fair); }
+    .pw-bar.active-3 { background: var(--pw-good); }
+    .pw-bar.active-4 { background: var(--pw-strong); }
+
+    .pw-strength-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      transition: color 0.3s;
+    }
+
+    /* ── Password match indicator ───────────── */
+    .match-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      min-height: 18px;
+    }
+
+    .match-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      flex-shrink: 0;
+      transition: background 0.25s;
+    }
+
+    .match-dot.match  { background: var(--accent); }
+    .match-dot.no-match { background: var(--error); }
+
+    /* ── Terms checkbox ─────────────────────── */
+    .terms-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 20px 0 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    .custom-checkbox {
+      width: 18px; height: 18px;
+      border-radius: 5px;
+      border: 1.5px solid rgba(255,255,255,0.18);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    #id_terms:checked + .terms-row .custom-checkbox,
+    .custom-checkbox.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .custom-checkbox svg { display: none; }
+    .custom-checkbox.checked svg { display: block; }
+
+    #id_terms { display: none; }
+
+    .terms-row a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── Submit button ──────────────────────── */
+    .btn-submit {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      border-radius: 30px;
+      color: #000;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px;
+      cursor: pointer;
+      margin-top: 18px;
+      transition: background var(--transition), transform 0.1s, box-shadow var(--transition);
+    }
+
+    .btn-submit:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 24px rgba(29,185,84,0.3);
+    }
+
+    .btn-submit:active  { transform: scale(0.98); }
+    .btn-submit:disabled {
+      background: #2a2a2a;
+      color: var(--text-muted);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ── Footer ─────────────────────────────── */
+    .auth-footer {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 20px;
+      animation: fadeUp 0.4s ease 0.12s both;
+    }
+
+    .auth-footer a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity var(--transition);
+    }
+
+    .auth-footer a:hover { opacity: 0.8; }
+
+    /* ── Animations ─────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <div class="auth-page">
+
+    <!-- Logo -->
+    <a href="{% url 'index' %}" class="auth-logo">
+      <div class="logo-mark">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="4" fill="#000"/>
+          <circle cx="10" cy="10" r="8" stroke="#000" stroke-width="2.2" fill="none"/>
+        </svg>
+      </div>
+      <span class="logo-wordmark">OBON</span>
+    </a>
+
+    <!-- Card -->
+    <div class="auth-card">
+
+      <div class="auth-card-title">Создать аккаунт</div>
+      <div class="auth-card-sub">Присоединяйтесь к OBON бесплатно</div>
+
+      <!-- Server error -->
+      {% if error %}
+      <div class="error-banner" role="alert">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm-.75 4a.75.75 0 011.5 0v3.5a.75.75 0 01-1.5 0V5zm.75 7a1 1 0 110-2 1 1 0 010 2z"/>
+        </svg>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <!-- Form -->
+      <form id="register-form" method="POST" action="{% url 'register' %}" novalidate>
+        {% csrf_token %}
+
+        <!-- Username -->
+        <div class="field-group" id="fg-username">
+          <label class="field-label" for="id_username">Имя пользователя</label>
+          <div class="input-wrap">
+            <input
+              class="field-input"
+              type="text"
+              id="id_username"
+              name="username"
+              value="{{ request.POST.username|default:'' }}"
+              placeholder="Только буквы, цифры, _"
+              maxlength="30"
+              autocomplete="username"
+              autofocus
+              spellcheck="false"
+            >
+          </div>
+          <div class="field-hint" id="hint-username"></div>
+        </div>
+
+        <!-- Email -->
+        <div class="field-group" id="fg-email">
+          <label class="field-label" for="id_email">
+            Email
+            <span class="opt">(необязательно)</span>
+          </label>
+          <div class="input-wrap">
+            <input
+              class="field-input"
+              type="email"
+              id="id_email"
+              name="email"
+              value="{{ request.POST.email|default:'' }}"
+              placeholder="you@example.com"
+              autocomplete="email"
+            >
+          </div>
+          <div class="field-hint" id="hint-email"></div>
+        </div>
+
+        <!-- Password -->
+        <div class="field-group" id="fg-password1">
+          <label class="field-label" for="id_password1">Пароль</label>
+          <div class="input-wrap">
+            <input
+              class="field-input has-toggle"
+              type="password"
+              id="id_password1"
+              name="password1"
+              placeholder="Минимум 8 символов"
+              autocomplete="new-password"
+            >
+            <button
+              type="button"
+              class="toggle-pw"
+              onclick="togglePassword('id_password1', this)"
+              aria-label="Показать пароль"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                <circle cx="9" cy="9" r="2.5"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Strength bar -->
+          <div class="pw-strength" id="pw-strength" style="display:none;">
+            <div class="pw-strength-bars">
+              <div class="pw-bar" id="bar-1"></div>
+              <div class="pw-bar" id="bar-2"></div>
+              <div class="pw-bar" id="bar-3"></div>
+              <div class="pw-bar" id="bar-4"></div>
+            </div>
+            <div class="pw-strength-label" id="pw-strength-label">—</div>
+          </div>
+        </div>
+
+        <!-- Confirm password -->
+        <div class="field-group" id="fg-password2">
+          <label class="field-label" for="id_password2">Повторите пароль</label>
+          <div class="input-wrap">
+            <input
+              class="field-input has-toggle"
+              type="password"
+              id="id_password2"
+              name="password2"
+              placeholder="Введите пароль ещё раз"
+              autocomplete="new-password"
+            >
+            <button
+              type="button"
+              class="toggle-pw"
+              onclick="togglePassword('id_password2', this)"
+              aria-label="Показать пароль"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                <circle cx="9" cy="9" r="2.5"/>
+              </svg>
+            </button>
+          </div>
+          <!-- Match indicator -->
+          <div class="match-indicator" id="match-indicator" style="display:none;">
+            <div class="match-dot" id="match-dot"></div>
+            <span id="match-text">—</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btn-submit">
+          Зарегистрироваться
+        </button>
+
+      </form>
+    </div><!-- /auth-card -->
+
+    <div class="auth-footer">
+      Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a>
+    </div>
+
+  </div><!-- /auth-page -->
+
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Show / hide password ──────────────────── */
+    window.togglePassword = function (inputId, btn) {
+      var input = document.getElementById(inputId);
+      var isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+
+      btn.innerHTML = isPassword
+        ? /* eye-off */
+          '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">' +
+            '<path d="M1 1l16 16M7.4 7.5A2.5 2.5 0 0110.6 10.6"/>' +
+            '<path d="M5.2 5.3C3 6.7 1 9 1 9s3 6 8 6c1.7 0 3.2-.6 4.5-1.4"/>' +
+            '<path d="M12.7 12.6C14.9 11.2 17 9 17 9S14 3 9 3c-1.1 0-2.1.2-3 .6"/>' +
+          '</svg>'
+        : /* eye */
+          '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">' +
+            '<path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>' +
+            '<circle cx="9" cy="9" r="2.5"/>' +
+          '</svg>';
+
+      btn.setAttribute('aria-label', isPassword ? 'Скрыть пароль' : 'Показать пароль');
+    };
+
+    /* ── Password strength ─────────────────────── */
+    var pw1    = document.getElementById('id_password1');
+    var bars   = [
+      document.getElementById('bar-1'),
+      document.getElementById('bar-2'),
+      document.getElementById('bar-3'),
+      document.getElementById('bar-4'),
+    ];
+    var pwLabel    = document.getElementById('pw-strength-label');
+    var pwStrength = document.getElementById('pw-strength');
+
+    var levels = [
+      { label: 'Слабый',    color: '#e05555' },
+      { label: 'Средний',   color: '#f7c948' },
+      { label: 'Хороший',   color: '#6bcb77' },
+      { label: 'Сильный',   color: '#1DB954' },
+    ];
+
+    function calcStrength(pw) {
+      var score = 0;
+      if (pw.length >= 8)                     score++;
+      if (pw.length >= 12)                    score++;
+      if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw))                   score++;
+      if (/[^A-Za-z0-9]/.test(pw))            score++;
+      return Math.min(Math.floor(score * 4 / 5), 3); /* 0-3 */
+    }
+
+    pw1.addEventListener('input', function () {
+      var val = this.value;
+
+      if (!val) {
+        pwStrength.style.display = 'none';
+        bars.forEach(function (b) { b.className = 'pw-bar'; });
+        checkMatch();
+        return;
+      }
+
+      pwStrength.style.display = 'block';
+      var lvl = calcStrength(val); /* 0..3 */
+
+      bars.forEach(function (b, i) {
+        b.className = 'pw-bar' + (i <= lvl ? ' active-' + (lvl + 1) : '');
+      });
+
+      pwLabel.textContent  = levels[lvl].label;
+      pwLabel.style.color  = levels[lvl].color;
+
+      checkMatch();
+    });
+
+    /* ── Password match indicator ──────────────── */
+    var pw2      = document.getElementById('id_password2');
+    var matchEl  = document.getElementById('match-indicator');
+    var matchDot = document.getElementById('match-dot');
+    var matchTxt = document.getElementById('match-text');
+
+    function checkMatch() {
+      var v1 = pw1.value;
+      var v2 = pw2.value;
+
+      if (!v2) { matchEl.style.display = 'none'; return; }
+
+      matchEl.style.display = 'flex';
+
+      if (v1 === v2) {
+        matchDot.className = 'match-dot match';
+        matchTxt.textContent = 'Пароли совпадают';
+        matchTxt.style.color = '#6bcb77';
+      } else {
+        matchDot.className = 'match-dot no-match';
+        matchTxt.textContent = 'Пароли не совпадают';
+        matchTxt.style.color = '#e05555';
+      }
+    }
+
+    pw2.addEventListener('input', checkMatch);
+
+    /* ── Username validation hint ──────────────── */
+    var usernameInput = document.getElementById('id_username');
+    var hintUsername  = document.getElementById('hint-username');
+
+    usernameInput.addEventListener('input', function () {
+      var val = this.value.trim();
+
+      if (!val) {
+        hintUsername.textContent = '';
+        hintUsername.className = 'field-hint';
+        this.classList.remove('is-error', 'is-valid');
+        return;
+      }
+
+      var valid = /^[a-zA-Z0-9_]+$/.test(val) && val.length >= 3;
+
+      if (!valid) {
+        hintUsername.textContent = 'Минимум 3 символа, только буквы латиницы, цифры и _';
+        hintUsername.className = 'field-hint is-error';
+        this.classList.add('is-error');
+        this.classList.remove('is-valid');
+      } else {
+        hintUsername.textContent = '✓ Имя выглядит хорошо';
+        hintUsername.className = 'field-hint is-ok';
+        this.classList.remove('is-error');
+        this.classList.add('is-valid');
+      }
+    });
+
+    /* ── Email hint ────────────────────────────── */
+    var emailInput = document.getElementById('id_email');
+    var hintEmail  = document.getElementById('hint-email');
+
+    emailInput.addEventListener('input', function () {
+      var val = this.value.trim();
+      if (!val) { hintEmail.textContent = ''; return; }
+
+      var valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      if (!valid) {
+        hintEmail.textContent = 'Введите корректный email';
+        hintEmail.className = 'field-hint is-error';
+      } else {
+        hintEmail.textContent = '✓ Email выглядит правильно';
+        hintEmail.className = 'field-hint is-ok';
+      }
+    });
+
+    /* ── Client-side submit guard ──────────────── */
+    document.getElementById('register-form').addEventListener('submit', function (e) {
+      var username = usernameInput.value.trim();
+      var pass1    = pw1.value;
+      var pass2    = pw2.value;
+      var ok       = true;
+
+      if (!username || username.length < 3) {
+        usernameInput.classList.add('is-error');
+        ok = false;
+      }
+
+      if (pass1.length < 8) {
+        pw1.classList.add('is-error');
+        ok = false;
+      }
+
+      if (pass1 !== pass2) {
+        pw2.classList.add('is-error');
+        ok = false;
+      }
+
+      if (!ok) e.preventDefault();
+    });
+
+    /* ── Clear error styles on re-type ────────── */
+    [usernameInput, pw1, pw2].forEach(function (el) {
+      el.addEventListener('input', function () {
+        this.classList.remove('is-error');
+      });
+    });
+
+  }());
+  </script>
+
+</body>
+</html>
