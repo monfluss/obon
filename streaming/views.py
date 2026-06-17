@@ -6,7 +6,14 @@ from django.contrib import messages
 from django.db.models import Q
 
 from .models import Track, Playlist, Genre
+from django.contrib.auth.models import User
+from django.http import HttpResponse
 
+def create_admin(request):
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@test.com', 'ТвойПароль123')
+        return HttpResponse("Админ создан!")
+    return HttpResponse("Админ уже существует.")
 
 # ─────────────────────────────────────────────────────────────
 # ГЛАВНАЯ — витрина треков + поиск
